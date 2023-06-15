@@ -1,5 +1,5 @@
 const express = require('express');
-const uniqueCodesController = require('../controllers/uniqueCodesController');
+const uniqueCodesController = require('../controllers/uniqueCodeController');
 
 const router = express.Router();
 

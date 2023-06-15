@@ -2,9 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const productsRoutes = require('./routes/productsRoutes');
-const subDealersRoutes = require('./routes/subDealersRoutes');
-const uniqueCodesRoutes = require('./routes/uniqueCodesRoutes');
+const productsRoutes = require('./routes/productRoutes');
+const subDealersRoutes = require('./routes/subDealerRoutes');
+const uniqueCodesRoutes = require('./routes/uniqueCodeRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 
 const app = express();
