@@ -1,5 +1,5 @@
 const express = require('express');
-const subDealersController = require('../controllers/subDealersController');
+const subDealersController = require('../controllers/subDealerController');
 
 const router = express.Router();
 
