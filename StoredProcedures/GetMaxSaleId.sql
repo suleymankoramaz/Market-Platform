@@ -1,0 +1,5 @@
+CREATE PROCEDURE GetMaxSaleId
+AS
+BEGIN
+    SELECT MAX(id) AS maxId FROM sale;
+END;

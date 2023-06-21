@@ -1,0 +1,5 @@
+CREATE PROCEDURE GetAllUniqueCodes
+AS
+BEGIN
+    SELECT * FROM uniqueCode;
+END;
