@@ -10,13 +10,14 @@ const config = {
         trustServerCertificate: true
     },
 };
+const salesController = require('../controllers/saleController');
 
 exports.getAllUniqueCodes = async (req, res) => {
     try {
         var conn = new sql.ConnectionPool(config);
         conn.connect().then(function () {
             var request = new sql.Request(conn);
-            request.query("SELECT * FROM uniqueCode").then(function (recordSet) {
+            request.execute("SelectAllUniqueCodes").then(function (recordSet) {
                 conn.close();
                 res.status(200).json(recordSet.recordset);
             }).catch(function (err) {
@@ -37,15 +38,14 @@ exports.addUniqueCode = async (req, res) => {
     const subDealer_id = req.query.subDealer_id;
     const product_id = req.query.product_id;
     const quantity = req.query.quantity;
-  
+    const sale_date = req.query.sale_date;
+    
     try {
         var conn = new sql.ConnectionPool(config);
         await conn.connect();
         var request = new sql.Request(conn);
 
-        // Get the maximum existing ID from the 'product' table
-        const maxIdQuery = 'SELECT MAX(id) AS maxId FROM product';
-        const maxIdResult = await request.query(maxIdQuery);
+        const maxIdResult = await request.execute("GetMaxUniqueCodeId");
         const maxId = maxIdResult.recordset[0].maxId;
         const newId = (maxId !== null) ? maxId + 1 : 0;
 
@@ -53,12 +53,15 @@ exports.addUniqueCode = async (req, res) => {
         request.input('subDealer_id', sql.Int, subDealer_id);
         request.input('product_id', sql.Int, product_id);
         request.input('quantity', sql.Int, quantity);
-    
-        const result = await request.query("INSERT INTO uniqueCode (id, subDealer_id, product_id, quantity) VALUES (@id, @subDealer_id, @product_id, @quantity)");
+
+        const result = await request.execute("InsertUniqueCode");
+
+        await salesController.recordSale(req, res);
+
         conn.close();
         res.status(200).json(result.recordset);
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: 'Error adding product', error: error.message });
+        res.status(500).json({ message: 'Error adding uniqueCode', error: error.message });
     }
 };

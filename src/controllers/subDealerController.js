@@ -16,7 +16,7 @@ exports.getAllSubDealers = async (req, res) => {
         var conn = new sql.ConnectionPool(config);
         conn.connect().then(function () {
             var request = new sql.Request(conn);
-            request.query("SELECT * FROM subDealer").then(function (recordSet) {
+            request.execute("SelectAllSubDealers").then(function (recordSet) {
                 conn.close();
                 res.status(200).json(recordSet.recordset);
             }).catch(function (err) {

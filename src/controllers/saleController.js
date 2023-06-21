@@ -16,7 +16,7 @@ exports.getAllSales = async (req, res) => {
         var conn = new sql.ConnectionPool(config);
         conn.connect().then(function () {
             var request = new sql.Request(conn);
-            request.query("SELECT * FROM sale").then(function (recordSet) {
+            request.execute("SelectAllSales").then(function (recordSet) {
                 conn.close();
                 res.status(200).json(recordSet.recordset);
             }).catch(function (err) {
@@ -35,7 +35,7 @@ exports.getAllSales = async (req, res) => {
 
 exports.recordSale = async (req, res) => {
     const subDealer_id = req.query.subDealer_id;
-    const product_id = req.query.product;
+    const product_id = req.query.product_id;
     const quantity = req.query.quantity;
     const sale_date = req.query.sale_date;
 
@@ -44,51 +44,44 @@ exports.recordSale = async (req, res) => {
         await conn.connect();
         var request = new sql.Request(conn);
 
-        // Check if the product's expiration_date has already passed
+        const maxIdResult = await request.execute("GetMaxSaleId");
+        const maxId = maxIdResult.recordset[0].maxId;
+        const newId = (maxId !== null) ? maxId + 1 : 0;
+
         request.input('product_id', sql.Int, product_id);
-        const expirationCheckQuery = `SELECT expiration_date FROM product WHERE id = @product_id`;
-        const expirationCheckResult = await request.query(expirationCheckQuery);
+        const expirationCheckResult = await request.execute("GetProductExpirationDate");
 
         const expirationDate = expirationCheckResult.recordset[0].expiration_date;
         if (new Date(expirationDate) < new Date()) {
-            // If the expiration_date has passed, return an error response
             conn.close();
             res.status(400).json({ message: 'Product has already expired' });
             return;
         }
 
-        // Check if there is enough stock for the product
-        const stockCheckQuery = `SELECT stock FROM product WHERE id = @product_id`;
-        const stockCheckResult = await request.query(stockCheckQuery);
+        const stockCheckResult = await request.execute("GetProductStock");
 
         const currentStock = stockCheckResult.recordset[0].stock;
         if (currentStock < quantity) {
-            // If there is not enough stock, return an error response
             conn.close();
             res.status(400).json({ message: 'Not enough stock for the product' });
             return;
         }
 
-        // Get the maximum existing ID from the 'product' table
-        const maxIdQuery = 'SELECT MAX(id) AS maxId FROM product';
-        const maxIdResult = await request.query(maxIdQuery);
-        const maxId = maxIdResult.recordset[0].maxId;
-        const newId = (maxId !== null) ? maxId + 1 : 0;
-
-        // Record the sale
         request.input('id', sql.Int, newId);
         request.input('subDealer_id', sql.NVarChar(255), subDealer_id);
         request.input('quantity', sql.Int, quantity);
-        request.input('sale_date', sql.DateTime, new Date());
+        request.input('sale_date', sql.DateTime, sale_date);
 
-        const recordSaleQuery = "INSERT INTO sale (id, subDealer_id, product_id, quantity, sale_date) VALUES (@id, @subDealer_id, @product_id, @quantity, @sale_date)";
-        await request.query(recordSaleQuery);
+        await request.execute("InsertSale");
 
-        // Update the product stock
+        
+
+        var request2 = new sql.Request(conn);
         const updatedStock = currentStock - quantity;
-        request.input('updatedStock', sql.Int, updatedStock);
-        const updateStockQuery = "UPDATE product SET stock = @updatedStock WHERE id = @product_id";
-        await request.query(updateStockQuery);
+
+        request2.input('product_id', sql.Int, product_id);
+        request2.input('updatedStock', sql.Int, updatedStock);
+        await request2.execute("UpdateProductStock");
 
         conn.close();
         res.status(200).json({ message: 'Sale recorded successfully' });
