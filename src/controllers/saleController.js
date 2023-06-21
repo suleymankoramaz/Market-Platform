@@ -34,9 +34,8 @@ exports.getAllSales = async (req, res) => {
 };
 
 exports.recordSale = async (req, res) => {
-    const id = req.query.id;
     const subDealer_id = req.query.subDealer_id;
-    const product_id = req.query.product_id;
+    const product_id = req.query.product;
     const quantity = req.query.quantity;
     const sale_date = req.query.sale_date;
 
@@ -46,8 +45,8 @@ exports.recordSale = async (req, res) => {
         var request = new sql.Request(conn);
 
         // Check if the product's expiration_date has already passed
-        const expirationCheckQuery = `SELECT expiration_date FROM product WHERE id = @product_id`;
         request.input('product_id', sql.Int, product_id);
+        const expirationCheckQuery = `SELECT expiration_date FROM product WHERE id = @product_id`;
         const expirationCheckResult = await request.query(expirationCheckQuery);
 
         const expirationDate = expirationCheckResult.recordset[0].expiration_date;
@@ -70,12 +69,17 @@ exports.recordSale = async (req, res) => {
             return;
         }
 
+        // Get the maximum existing ID from the 'product' table
+        const maxIdQuery = 'SELECT MAX(id) AS maxId FROM product';
+        const maxIdResult = await request.query(maxIdQuery);
+        const maxId = maxIdResult.recordset[0].maxId;
+        const newId = (maxId !== null) ? maxId + 1 : 0;
+
         // Record the sale
-        request.input('id', sql.Int, id);
+        request.input('id', sql.Int, newId);
         request.input('subDealer_id', sql.NVarChar(255), subDealer_id);
-        request.input('product_id', sql.Int, product_id);
         request.input('quantity', sql.Int, quantity);
-        request.input('sale_date', sql.DateTime, sale_date);
+        request.input('sale_date', sql.DateTime, new Date());
 
         const recordSaleQuery = "INSERT INTO sale (id, subDealer_id, product_id, quantity, sale_date) VALUES (@id, @subDealer_id, @product_id, @quantity, @sale_date)";
         await request.query(recordSaleQuery);

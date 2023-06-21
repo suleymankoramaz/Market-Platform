@@ -34,7 +34,6 @@ exports.getAllUniqueCodes = async (req, res) => {
 };
 
 exports.addUniqueCode = async (req, res) => {
-    const id = req.query.id;
     const subDealer_id = req.query.subDealer_id;
     const product_id = req.query.product_id;
     const quantity = req.query.quantity;
@@ -43,8 +42,14 @@ exports.addUniqueCode = async (req, res) => {
         var conn = new sql.ConnectionPool(config);
         await conn.connect();
         var request = new sql.Request(conn);
-        
-        request.input('id', sql.Int, id);
+
+        // Get the maximum existing ID from the 'product' table
+        const maxIdQuery = 'SELECT MAX(id) AS maxId FROM product';
+        const maxIdResult = await request.query(maxIdQuery);
+        const maxId = maxIdResult.recordset[0].maxId;
+        const newId = (maxId !== null) ? maxId + 1 : 0;
+
+        request.input('id', sql.Int, newId);
         request.input('subDealer_id', sql.Int, subDealer_id);
         request.input('product_id', sql.Int, product_id);
         request.input('quantity', sql.Int, quantity);
