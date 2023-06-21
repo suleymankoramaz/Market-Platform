@@ -4,7 +4,6 @@ const config = {
     database: 'MarketDB',
     user: 'sulo',
     password: 'Slymn1432.',
-    port: 1433,
     options: {
         trustedConnection: true, // For Windows authentication
         enableArithAbort: true,
@@ -39,11 +38,6 @@ exports.addProduct = async (req, res) => {
     const name = req.query.name;
     const stock = req.query.stock;
     const expiration_date = req.query.expiration_date;
-
-    console.log(id);
-    console.log(name);
-    console.log(stock);
-    console.log(expiration_date);
   
     try {
         var conn = new sql.ConnectionPool(config);
