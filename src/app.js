@@ -13,8 +13,8 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use('/product', productsRoutes);
-app.use('/sub-dealer', subDealersRoutes);
-app.use('/unique-code', uniqueCodesRoutes);
+app.use('/subDealer', subDealersRoutes);
+app.use('/uniqueCode', uniqueCodesRoutes);
 app.use('/sale', salesRoutes);
 
 const PORT = process.env.PORT || 4000;

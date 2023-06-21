@@ -45,14 +45,24 @@ exports.recordSale = async (req, res) => {
         await conn.connect();
         var request = new sql.Request(conn);
 
+        // Check if the product's expiration_date has already passed
+        const expirationCheckQuery = `SELECT expiration_date FROM product WHERE id = @product_id`;
+        request.input('product_id', sql.Int, product_id);
+        const expirationCheckResult = await request.query(expirationCheckQuery);
+
+        const expirationDate = expirationCheckResult.recordset[0].expiration_date;
+        if (new Date(expirationDate) < new Date()) {
+            // If the expiration_date has passed, return an error response
+            conn.close();
+            res.status(400).json({ message: 'Product has already expired' });
+            return;
+        }
+
         // Check if there is enough stock for the product
         const stockCheckQuery = `SELECT stock FROM product WHERE id = @product_id`;
-        request.input('product_id', sql.Int, product_id);
         const stockCheckResult = await request.query(stockCheckQuery);
 
         const currentStock = stockCheckResult.recordset[0].stock;
-        console.log(stockCheckResult.recordset[0]);
-        console.log(quantity);
         if (currentStock < quantity) {
             // If there is not enough stock, return an error response
             conn.close();
@@ -63,6 +73,7 @@ exports.recordSale = async (req, res) => {
         // Record the sale
         request.input('id', sql.Int, id);
         request.input('subDealer_id', sql.NVarChar(255), subDealer_id);
+        request.input('product_id', sql.Int, product_id);
         request.input('quantity', sql.Int, quantity);
         request.input('sale_date', sql.DateTime, sale_date);
 
